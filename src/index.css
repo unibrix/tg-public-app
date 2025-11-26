@@ -5,11 +5,6 @@ body {
 }
 
 /* Adjust Tabbar position on iOS for better home indicator spacing */
-.tabbar-wrapper {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding-bottom: 8px;
-  background: var(--tgui--secondary_bg_color);
+.tabbar-wrapper > div {
+  padding-bottom: 26px;
 }
