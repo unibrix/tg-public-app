@@ -9,7 +9,7 @@ export default defineConfig(({ command }) => ({
   // Dev (npm run dev): '/' → http://localhost:5173/
   // Build (npm run build): '/repo-name/' → GitHub Pages
   // Change 'tma-react-starter' to your repo name when deploying
-  base: command === 'serve' ? '/' : '/tma-react-starter/',
+  base: command === 'serve' ? '/' : '/tg-public-app/',
   css: {
     preprocessorOptions: {
       scss: {
