@@ -1,8 +1,17 @@
-# Telegram Mini App - React Starter
+# Unibrix TMA Showcase
 
-Minimal starter for Telegram Mini Apps with React + TypeScript.
+Telegram Mini App demonstrating native TMA capabilities. Built by [Unibrix](https://unibrix.io) to showcase expertise in Telegram Mini App development.
 
-**Stack:** React 18 · TypeScript · Vite · [@tma.js/sdk-react](https://docs.telegram-mini-apps.com/) · [Telegram UI](https://github.com/Telegram-Mini-Apps/TelegramUI)
+**Stack:** React 18 · TypeScript · Vite · Zustand · [@tma.js/sdk-react](https://docs.telegram-mini-apps.com/) · [Telegram UI](https://github.com/Telegram-Mini-Apps/TelegramUI)
+
+## Features
+
+| Page | TMA Feature | Description |
+|------|-------------|-------------|
+| **Wallet** | `biometry` | Biometric-protected crypto price list (Face ID / Fingerprint) |
+| **Weather** | `locationManager` | Location-based weather using device geolocation |
+| **Photos** | `qrScanner` | QR scanner and photo gallery with camera access |
+| **Settings** | `cloudStorage` | User profile, preferences, cloud storage demo |
 
 ## Quick Start
 
@@ -13,6 +22,10 @@ npm run dev
 
 Open http://localhost:5173/ — the app runs with a mock Telegram environment.
 
+## Try in Telegram
+
+Open [@unibrix_demo_bot](https://t.me/unibrix_demo_bot) and click the menu button.
+
 ## Deploy to GitHub Pages
 
 **1. Configure base path**
@@ -20,7 +33,7 @@ Open http://localhost:5173/ — the app runs with a mock Telegram environment.
 Edit `vite.config.ts` with your repo name:
 ```ts
 // github.com/YourUsername/your-repo → '/your-repo/'
-base: command === 'serve' ? '/' : '/tma-react-starter/',
+base: command === 'serve' ? '/' : '/tg-public-app/',
 ```
 
 **2. Enable GitHub Pages**
@@ -70,6 +83,9 @@ Open your bot in Telegram — click the menu button to launch the app!
 | `mainButton` | Bottom action button |
 | `popup` | Native alert dialogs |
 | `cloudStorage` | Persist data across sessions |
+| `biometry` | Face ID / Fingerprint authentication |
+| `locationManager` | Device geolocation |
+| `qrScanner` | QR code scanning |
 
 ## Project Structure
 
@@ -77,16 +93,19 @@ Open your bot in Telegram — click the menu button to launch the app!
 src/
 ├── components/
 │   ├── App.tsx           # Router + theme setup
-│   ├── Page.tsx          # Page wrapper with back button
-│   ├── Root.tsx          # Error boundary wrapper
-│   └── EnvUnsupported.tsx
+│   ├── TabBar/           # Bottom tab navigation
+│   ├── Page.tsx          # Page wrapper
+│   └── Root.tsx          # Error boundary wrapper
 ├── pages/
-│   └── IndexPage/        # Home page
+│   ├── WalletPage/       # Biometric protected list
+│   ├── WeatherPage/      # Location-based weather
+│   ├── PhotosPage/       # QR scanner + gallery
+│   └── SettingsPage/     # User settings
+├── store/                # Zustand state management
 ├── navigation/
 │   └── routes.tsx        # Route definitions
 ├── init.ts               # SDK initialization
-├── mockEnv.ts            # Mock for local development
-└── vite-env.d.ts         # TypeScript env types
+└── mockEnv.ts            # Mock for local development
 ```
 
 ## Environment Variables
