@@ -1,19 +1,20 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { hapticFeedback } from '@tma.js/sdk-react';
+import { Tabbar } from '@telegram-apps/telegram-ui';
 import { useAppStore } from '@/store';
-import './TabBar.css';
+import { WalletIcon, WeatherIcon, PhotosIcon, SettingsIcon } from '@/components/icons';
 
 interface Tab {
   path: string;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 const tabs: Tab[] = [
-  { path: '/', label: 'Wallet', icon: '🔐' },
-  { path: '/weather', label: 'Weather', icon: '🌤' },
-  { path: '/photos', label: 'Photos', icon: '📷' },
-  { path: '/settings', label: 'Settings', icon: '⚙️' },
+  { path: '/', label: 'Wallet', icon: <WalletIcon /> },
+  { path: '/weather', label: 'Weather', icon: <WeatherIcon /> },
+  { path: '/photos', label: 'Photos', icon: <PhotosIcon /> },
+  { path: '/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 
 export function TabBar() {
@@ -31,17 +32,19 @@ export function TabBar() {
   };
 
   return (
-    <nav className="tab-bar">
-      {tabs.map((tab) => (
-        <button
-          key={tab.path}
-          className={`tab-bar__item ${location.pathname === tab.path ? 'tab-bar__item--active' : ''}`}
-          onClick={() => handleTabClick(tab.path)}
-        >
-          <span className="tab-bar__icon">{tab.icon}</span>
-          <span className="tab-bar__label">{tab.label}</span>
-        </button>
-      ))}
-    </nav>
+    <div className="tabbar-wrapper">
+      <Tabbar>
+        {tabs.map((tab) => (
+          <Tabbar.Item
+            key={tab.path}
+            text={tab.label}
+            selected={location.pathname === tab.path}
+            onClick={() => handleTabClick(tab.path)}
+          >
+            {tab.icon}
+          </Tabbar.Item>
+        ))}
+      </Tabbar>
+    </div>
   );
 }
