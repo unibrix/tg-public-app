@@ -22,6 +22,37 @@ npm run dev
 
 Open http://localhost:5173/ — the app runs with a mock Telegram environment.
 
+## Development with ngrok
+
+Some TMA features require a real device and HTTPS:
+
+| Feature | Localhost | Real Device + HTTPS |
+|---------|-----------|---------------------|
+| `locationManager` | Limited | Full |
+| `biometry` | No | Yes |
+| `qrScanner` | No | Yes |
+| Theme/haptics | Mock | Native |
+
+
+**1. One-time setup**
+
+```bash
+brew install ngrok
+ngrok config add-authtoken YOUR_TOKEN  # from ngrok.com/dashboard
+```
+
+**2. Run**
+
+```bash
+npm run dev:tunnel
+```
+
+This starts Vite + ngrok and auto-updates your bot's menu URL.
+
+**3. Test**
+
+Open your bot in Telegram on your phone — all features work!
+
 ## Try in Telegram
 
 Open [@unibrix_demo_bot](https://t.me/unibrix_demo_bot) and click the menu button.
@@ -53,13 +84,13 @@ Open [@BotFather](https://t.me/BotFather) and send `/newbot`. Save the token.
 **2. Configure environment**
 
 ```bash
-cp .env.example .env
+cp .env.example .env.production
 ```
 
-Edit `.env`:
+Edit `.env.production`:
 ```
 BOT_TOKEN=your_token_from_botfather
-APP_URL=https://yourusername.github.io/your-repo/
+VITE_APP_URL=https://yourusername.github.io/your-repo/
 ```
 
 **3. Run setup script**
@@ -110,19 +141,15 @@ src/
 
 ## Environment Variables
 
-App variables use `VITE_` prefix and are embedded at build time:
+Environment files (gitignored):
+- `.env.development` — loaded by `npm run dev`
+- `.env.production` — loaded by `npm run build`
 
-```bash
-# .env
-VITE_API_URL=https://api.example.com
-```
+Variables with `VITE_` prefix are embedded at build time:
 
 ```ts
-// In code
-const url = import.meta.env.VITE_API_URL
+const url = import.meta.env.VITE_APP_URL
 ```
-
-For GitHub Actions, add secrets in **Settings → Secrets → Actions**.
 
 ## Resources
 
