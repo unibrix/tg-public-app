@@ -97,6 +97,18 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
         });
 
         log("Access request result", { granted });
+
+        // Re-mount to refresh state after access request
+        if (granted && biometry.mount.isAvailable()) {
+          log("Re-mounting to refresh state...");
+          try {
+            await biometry.mount();
+            log("Re-mounted, new state:", biometry.state());
+          } catch {
+            // Ignore mount errors, proceed with auth
+          }
+        }
+
         return granted;
       } catch (err) {
         log("Access request error", err);
@@ -105,6 +117,18 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
     },
     [log]
   );
+
+  /**
+   * Open biometry settings (must be called from user interaction)
+   */
+  const openSettings = useCallback(() => {
+    if (biometry.openSettings.isAvailable()) {
+      log("Opening biometry settings...");
+      biometry.openSettings();
+    } else {
+      log("openSettings not available");
+    }
+  }, [log]);
 
   /**
    * Execute a secure operation with biometric authentication
@@ -278,6 +302,10 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
     withBiometricAuth,
     /** Execute action requiring biometry, fails if unavailable */
     requireBiometricAuth,
+    /** Open biometry settings (must be called from user click) */
+    openSettings,
+    /** Whether openSettings is available */
+    canOpenSettings: biometry.openSettings.isAvailable(),
     /** Whether currently in a biometric flow */
     isProcessing: ["checking", "requesting_access", "authenticating"].includes(status),
   };
