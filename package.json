@@ -6,7 +6,7 @@
   "scripts": {
     "deploy": "gh-pages -d dist",
     "dev": "vite",
-    "dev:https": "cross-env HTTPS=true vite",
+    "dev:tunnel": "./scripts/dev-ngrok.sh",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
@@ -30,7 +30,6 @@
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
     "@vitejs/plugin-react-swc": "^3.11.0",
-    "cross-env": "^7.0.3",
     "eslint": "^9.34.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
