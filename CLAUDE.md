@@ -25,10 +25,16 @@ src/
 ## Commands
 
 ```bash
-npm run dev       # Start dev server (mock TMA environment)
-npm run build     # Production build
-npm run lint      # Run ESLint
+npm run dev        # Local dev (mock TMA)
+npm run dev:tunnel # ngrok + auto-update bot URL (real device testing)
+npm run build      # Production build
+npm run lint       # ESLint
 ```
+
+## Environment
+
+- `.env.development` → `npm run dev`
+- `.env.production` → `npm run build`
 
 ## Git Conventions
 
