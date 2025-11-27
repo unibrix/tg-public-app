@@ -1,7 +1,7 @@
-import react from '@vitejs/plugin-react-swc';
-import { defineConfig } from 'vite';
-import mkcert from 'vite-plugin-mkcert';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import react from "@vitejs/plugin-react-swc";
+import { defineConfig } from "vite";
+import mkcert from "vite-plugin-mkcert";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
@@ -9,25 +9,22 @@ export default defineConfig(({ command }) => ({
   // Dev (npm run dev): '/' → http://localhost:5173/
   // Build (npm run build): '/repo-name/' → GitHub Pages
   // Change 'tma-react-starter' to your repo name when deploying
-  base: command === 'serve' ? '/' : '/tg-public-app/',
+  base: command === "serve" ? "/" : "/tg-public-app/",
   css: {
     preprocessorOptions: {
       scss: {
-        api: 'modern',
+        api: "modern",
       },
     },
   },
-  plugins: [
-    react(),
-    tsconfigPaths(),
-    process.env.HTTPS && mkcert(),
-  ],
+  plugins: [react(), tsconfigPaths(), process.env.HTTPS && mkcert()],
   build: {
-    target: 'esnext',
-    minify: 'terser'
+    target: "esnext",
+    minify: "terser",
   },
-  publicDir: './public',
+  publicDir: "./public",
   server: {
     host: true,
+    allowedHosts: ["unharangued-noisome-kayla.ngrok-free.dev"],
   },
 }));

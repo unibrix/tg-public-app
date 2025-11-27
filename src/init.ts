@@ -6,7 +6,8 @@ import {
   init as initSDK,
   miniApp,
   backButton,
-} from '@tma.js/sdk-react';
+  locationManager,
+} from "@tma.js/sdk-react";
 
 /**
  * Initializes the Telegram Mini App SDK.
@@ -17,6 +18,7 @@ export async function init(debug: boolean): Promise<void> {
 
   backButton.mount.ifAvailable();
   initData.restore();
+  locationManager.mount.ifAvailable();
 
   if (miniApp.mount.isAvailable()) {
     themeParams.mount();
