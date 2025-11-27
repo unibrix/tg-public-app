@@ -1,0 +1,80 @@
+.weatherWidget {
+  min-height: 96px;
+}
+
+.weatherWidgetContent {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+}
+
+.weatherIcon {
+  width: 64px;
+  height: 64px;
+  margin-right: 16px;
+}
+
+.weatherTemp {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.weatherDescription {
+  font-size: 16px;
+  color: #666;
+}
+
+.weatherCity {
+  font-size: 14px;
+}
+
+.mapContainer {
+  height: 200px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.mapIframe {
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+.skeleton {
+  background-color: #e0e0e0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.weatherSkeletonIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  margin-right: 16px;
+}
+
+.weatherSkeletonTemp {
+  width: 80px;
+  height: 24px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.weatherSkeletonDesc {
+  width: 120px;
+  height: 16px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.weatherSkeletonCity {
+  width: 100px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.mapSkeleton {
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+}
