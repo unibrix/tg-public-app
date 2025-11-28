@@ -1,6 +1,23 @@
-import { biometry, hapticFeedback } from "@tma.js/sdk-react";
+import { biometry, hapticFeedback, popup } from "@tma.js/sdk-react";
 import { useCallback, useState } from "react";
 import { useAppStore } from "../store";
+
+/**
+ * Show error popup to user via Telegram's native modal
+ */
+const showErrorPopup = (message: string) => {
+  try {
+    if (popup.isSupported()) {
+      popup.show({
+        title: "Authentication Error",
+        message,
+        buttons: [{ type: "ok" }],
+      });
+    }
+  } catch {
+    // Ignore popup errors
+  }
+};
 
 type BiometricStatus =
   | "idle"
@@ -208,6 +225,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
           triggerHaptic("error");
           setStatus("denied");
           setError("Authentication failed");
+          showErrorPopup("Biometric authentication failed. Please try again.");
           return { success: false, status: "denied", error: "Authentication failed" };
         }
       } catch (err) {
@@ -216,6 +234,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
         setError(errorMsg);
         setStatus("error");
         triggerHaptic("error");
+        showErrorPopup(`Authentication error: ${errorMsg}`);
         return { success: false, status: "error", error: errorMsg };
       }
     },
@@ -240,6 +259,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
         log("Biometry not available");
         setStatus("unavailable");
         setError("Biometry not available on this device");
+        showErrorPopup("Biometric authentication is not available on this device.");
         return {
           success: false,
           status: "unavailable",
@@ -255,6 +275,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
           setStatus("denied");
           setError("Biometry access denied");
           triggerHaptic("error");
+          showErrorPopup("Biometric access was denied. Enable it in Settings.");
           return { success: false, status: "denied", error: "Biometry access denied" };
         }
       }
@@ -274,6 +295,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
           triggerHaptic("error");
           setStatus("denied");
           setError("Authentication denied");
+          showErrorPopup("Biometric authentication was denied. Please try again.");
           return { success: false, status: "denied", error: "Authentication denied" };
         }
       } catch (err) {
@@ -281,6 +303,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
         setError(errorMsg);
         setStatus("error");
         triggerHaptic("error");
+        showErrorPopup(`Authentication error: ${errorMsg}`);
         return { success: false, status: "error", error: errorMsg };
       }
     },

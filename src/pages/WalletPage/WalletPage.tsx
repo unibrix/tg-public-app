@@ -34,19 +34,32 @@ interface PriceData {
   };
 }
 
+// Simple price cache (2 min TTL)
+const CACHE_TTL = 2 * 60 * 1000;
+let priceCache: { data: PriceData; timestamp: number } | null = null;
+
 export function WalletPage() {
-  const [prices, setPrices] = useState<PriceData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [prices, setPrices] = useState<PriceData | null>(priceCache?.data ?? null);
+  const [loading, setLoading] = useState(!priceCache);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(
+    priceCache ? new Date(priceCache.timestamp) : null
+  );
   const [selectedCoin, setSelectedCoin] = useState<CoinData | null>(null);
 
   const { favoriteCoins, toggleFavorite } = useAppStore();
   const { withBiometricAuth } = useBiometricAuth();
   const { impact } = useHaptics();
 
+  const fetchPrices = useCallback(async (force = false) => {
+    // Use cache if valid
+    if (!force && priceCache && Date.now() - priceCache.timestamp < CACHE_TTL) {
+      setPrices(priceCache.data);
+      setLastUpdated(new Date(priceCache.timestamp));
+      setLoading(false);
+      return;
+    }
 
-  const fetchPrices = useCallback(async () => {
     try {
       const ids = COINS.map((c) => c.id).join(",");
       const res = await fetch(
@@ -54,11 +67,18 @@ export function WalletPage() {
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+
+      // Update cache
+      priceCache = { data, timestamp: Date.now() };
+
       setPrices(data);
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch prices");
+      // On error, keep showing cached data if available
+      if (!priceCache) {
+        setError(err instanceof Error ? err.message : "Failed to fetch prices");
+      }
     } finally {
       setLoading(false);
     }
@@ -66,9 +86,9 @@ export function WalletPage() {
 
   useEffect(() => {
     fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
+    const interval = setInterval(() => fetchPrices(), CACHE_TTL);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchPrices]);
 
   const handleStarClick = async (
     e: React.MouseEvent,
