@@ -1,4 +1,4 @@
-import { Section, Cell, List, Switch } from '@telegram-apps/telegram-ui';
+import { Section, Cell, List, Switch, Divider } from '@telegram-apps/telegram-ui';
 import { useAppStore } from '../../store';
 
 export function SettingsPage() {
@@ -17,6 +17,7 @@ export function SettingsPage() {
         >
           Haptic Feedback
         </Cell>
+        <Divider />
         <Cell
           subtitle="Protect favorites and purchases"
           after={
