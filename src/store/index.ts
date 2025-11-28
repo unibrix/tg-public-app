@@ -5,6 +5,7 @@ import { cloudStorageAdapter } from './cloudStorage';
 interface AppState {
   // Settings
   hapticsEnabled: boolean;
+  biometryEnabled: boolean;
 
   // Wallet
   favoriteCoins: string[];
@@ -12,6 +13,7 @@ interface AppState {
 
   // Actions
   setHapticsEnabled: (enabled: boolean) => void;
+  setBiometryEnabled: (enabled: boolean) => void;
   addFavorite: (coinId: string) => void;
   removeFavorite: (coinId: string) => void;
   toggleFavorite: (coinId: string) => void;
@@ -22,10 +24,12 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       hapticsEnabled: true,
+      biometryEnabled: true,
       favoriteCoins: [],
       holdings: {},
 
       setHapticsEnabled: (enabled) => set({ hapticsEnabled: enabled }),
+      setBiometryEnabled: (enabled) => set({ biometryEnabled: enabled }),
 
       addFavorite: (coinId) =>
         set((state) => ({

@@ -1,11 +1,8 @@
 import { Section, Cell, List, Switch } from '@telegram-apps/telegram-ui';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { useAppStore } from '../../store';
 
 export function SettingsPage() {
-  const { openSettings, canOpenSettings, getState, isAvailable } = useBiometricAuth();
-  const { hapticsEnabled, setHapticsEnabled } = useAppStore();
-  const biometryState = getState();
+  const { hapticsEnabled, setHapticsEnabled, biometryEnabled, setBiometryEnabled } = useAppStore();
 
   return (
     <List>
@@ -20,18 +17,14 @@ export function SettingsPage() {
         >
           Haptic Feedback
         </Cell>
-      </Section>
-
-      <Section header="Security">
         <Cell
-          subtitle={
-            !isAvailable()
-              ? "Not available on this device"
-              : biometryState?.accessGranted
-              ? "Enabled"
-              : "Tap to configure"
+          subtitle="Protect favorites and purchases"
+          after={
+            <Switch
+              checked={biometryEnabled}
+              onChange={() => setBiometryEnabled(!biometryEnabled)}
+            />
           }
-          onClick={canOpenSettings ? openSettings : undefined}
         >
           Biometric Authentication
         </Cell>

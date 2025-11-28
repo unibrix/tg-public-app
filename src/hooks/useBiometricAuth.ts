@@ -49,6 +49,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
   const [status, setStatus] = useState<BiometricStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const hapticsEnabled = useAppStore((s) => s.hapticsEnabled);
+  const biometryEnabled = useAppStore((s) => s.biometryEnabled);
 
   const log = useCallback(
     (message: string, data?: unknown) => {
@@ -159,7 +160,23 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
       reason: string
     ): Promise<BiometricResult & { result?: T }> => {
       setError(null);
-      log("Starting biometric auth flow", { reason });
+      log("Starting biometric auth flow", { reason, biometryEnabled });
+
+      // Skip biometry if disabled in settings
+      if (!biometryEnabled) {
+        log("Biometry disabled in settings, executing without auth");
+        try {
+          const result = await onSuccess();
+          triggerHaptic("success");
+          setStatus("idle");
+          return { success: true, status: "idle", result };
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : "Unknown error";
+          setError(errorMsg);
+          setStatus("error");
+          return { success: false, status: "error", error: errorMsg };
+        }
+      }
 
       // Step 1: Check availability
       setStatus("checking");
@@ -238,7 +255,7 @@ export function useBiometricAuth(options: UseBiometricAuthOptions = {}) {
         return { success: false, status: "error", error: errorMsg };
       }
     },
-    [isAvailable, requestAccess, triggerHaptic, log]
+    [isAvailable, requestAccess, triggerHaptic, log, biometryEnabled]
   );
 
   /**
