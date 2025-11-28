@@ -1,4 +1,5 @@
-import { Section, List, Cell, Avatar } from "@telegram-apps/telegram-ui";
+import { Section, List, Cell, Avatar, Divider } from "@telegram-apps/telegram-ui";
+import { Fragment } from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useAppStore } from "../../store";
 import { useBiometricAuth } from "../../hooks/useBiometricAuth";
@@ -124,7 +125,6 @@ export function WalletPage() {
 
     return (
       <Cell
-        key={coin.id}
         before={
           <Avatar
             size={48}
@@ -185,11 +185,21 @@ export function WalletPage() {
           <>
             {favoritesList.length > 0 && (
               <Section header="Favorites">
-                {favoritesList.map(renderCoinRow)}
+                {favoritesList.map((coin, idx) => (
+                  <Fragment key={coin.id}>
+                    {idx > 0 && <Divider />}
+                    {renderCoinRow(coin)}
+                  </Fragment>
+                ))}
               </Section>
             )}
             <Section header={favoritesList.length > 0 ? "All Assets" : "Assets"}>
-              {othersList.map(renderCoinRow)}
+              {othersList.map((coin, idx) => (
+                <Fragment key={coin.id}>
+                  {idx > 0 && <Divider />}
+                  {renderCoinRow(coin)}
+                </Fragment>
+              ))}
             </Section>
           </>
         )}
