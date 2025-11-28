@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { useAppStore } from "../../store";
 import { useBiometricAuth } from "../../hooks/useBiometricAuth";
 import { useHaptics } from "../../hooks/useHaptics";
@@ -18,7 +19,10 @@ interface CoinDetailModalProps {
   onClose: () => void;
 }
 
+const ANIMATION_DURATION = 200;
+
 export function CoinDetailModal({ coin, onClose }: CoinDetailModalProps) {
+  const [isClosing, setIsClosing] = useState(false);
   const { favoriteCoins, holdings, toggleFavorite, addHolding } = useAppStore();
   const { withBiometricAuth } = useBiometricAuth();
   const { impact } = useHaptics();
@@ -26,6 +30,12 @@ export function CoinDetailModal({ coin, onClose }: CoinDetailModalProps) {
   const isFavorite = favoriteCoins.includes(coin.id);
   const currentHolding = holdings[coin.id] || 0;
   const holdingValue = currentHolding * coin.price;
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(onClose, ANIMATION_DURATION);
+  }, [isClosing, onClose]);
 
   const handleFavoriteToggle = async () => {
     impact("medium");
@@ -41,17 +51,20 @@ export function CoinDetailModal({ coin, onClose }: CoinDetailModalProps) {
     }, `Confirm purchase of ${coin.symbol.toUpperCase()}`);
 
     if (result.success) {
-      onClose();
+      handleClose();
     }
   };
 
   return (
-    <div className={styles.modal} onClick={onClose}>
+    <div
+      className={`${styles.modal} ${isClosing ? styles.modalClosing : ""}`}
+      onClick={handleClose}
+    >
       <div
-        className={styles.modalContent}
+        className={`${styles.modalContent} ${isClosing ? styles.modalContentClosing : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button className={styles.closeButton} onClick={onClose}>
+        <button className={styles.closeButton} onClick={handleClose}>
           ×
         </button>
 
