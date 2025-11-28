@@ -270,6 +270,15 @@
   }
 }
 
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -277,4 +286,21 @@
   to {
     transform: translateY(0);
   }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.modalClosing {
+  animation: fadeOut 0.2s ease-out forwards;
+}
+
+.modalContentClosing {
+  animation: slideDown 0.2s ease-out forwards;
 }
