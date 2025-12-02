@@ -2,10 +2,18 @@ import { Section, Cell, List, Switch, Divider } from '@telegram-apps/telegram-ui
 import { useAppStore } from '../../store';
 
 export function SettingsPage() {
-  const { hapticsEnabled, setHapticsEnabled, biometryEnabled, setBiometryEnabled } = useAppStore();
+  const { hapticsEnabled, setHapticsEnabled, biometryEnabled, setBiometryEnabled, startParam } = useAppStore();
 
   return (
     <List>
+      {startParam && (
+        <Section header="Deep Link">
+          <Cell subtitle="Received via startapp parameter">
+            {startParam}
+          </Cell>
+        </Section>
+      )}
+
       <Section header="Preferences">
         <Cell
           after={

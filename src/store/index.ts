@@ -11,6 +11,9 @@ interface AppState {
   favoriteCoins: string[];
   holdings: Record<string, number>;
 
+  // Deep link (not persisted)
+  startParam: string | null;
+
   // Actions
   setHapticsEnabled: (enabled: boolean) => void;
   setBiometryEnabled: (enabled: boolean) => void;
@@ -18,6 +21,7 @@ interface AppState {
   removeFavorite: (coinId: string) => void;
   toggleFavorite: (coinId: string) => void;
   addHolding: (coinId: string, amount: number) => void;
+  setStartParam: (param: string | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -27,9 +31,11 @@ export const useAppStore = create<AppState>()(
       biometryEnabled: true,
       favoriteCoins: [],
       holdings: {},
+      startParam: null,
 
       setHapticsEnabled: (enabled) => set({ hapticsEnabled: enabled }),
       setBiometryEnabled: (enabled) => set({ biometryEnabled: enabled }),
+      setStartParam: (param) => set({ startParam: param }),
 
       addFavorite: (coinId) =>
         set((state) => ({
@@ -63,6 +69,12 @@ export const useAppStore = create<AppState>()(
     {
       name: 'app-settings',
       storage: createJSONStorage(() => cloudStorageAdapter),
+      partialize: (state) => ({
+        hapticsEnabled: state.hapticsEnabled,
+        biometryEnabled: state.biometryEnabled,
+        favoriteCoins: state.favoriteCoins,
+        holdings: state.holdings,
+      }),
     }
   )
 );

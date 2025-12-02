@@ -1,9 +1,35 @@
-import { Navigate, Route, Routes, HashRouter } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Navigate, Route, Routes, HashRouter, useNavigate } from 'react-router-dom';
 import { useLaunchParams, useSignal, miniApp } from '@tma.js/sdk-react';
 import { AppRoot } from '@telegram-apps/telegram-ui';
 
 import { routes } from '@/navigation/routes.tsx';
 import { TabBar } from '@/components/TabBar';
+import { useStartParam } from '@/hooks';
+import { useAppStore } from '@/store';
+
+function AppRoutes() {
+  const navigate = useNavigate();
+  const { raw: startParam } = useStartParam();
+  const setStartParam = useAppStore((s) => s.setStartParam);
+
+  useEffect(() => {
+    if (startParam) {
+      setStartParam(startParam);
+      navigate('/settings');
+    }
+  }, [startParam, setStartParam, navigate]);
+
+  return (
+    <>
+      <Routes>
+        {routes.map((route) => <Route key={route.path} {...route} />)}
+        <Route path="*" element={<Navigate to="/"/>}/>
+      </Routes>
+      <TabBar />
+    </>
+  );
+}
 
 export function App() {
   const lp = useLaunchParams();
@@ -15,11 +41,7 @@ export function App() {
       platform={['macos', 'ios'].includes(lp.tgWebAppPlatform) ? 'ios' : 'base'}
     >
       <HashRouter>
-        <Routes>
-          {routes.map((route) => <Route key={route.path} {...route} />)}
-          <Route path="*" element={<Navigate to="/"/>}/>
-        </Routes>
-        <TabBar />
+        <AppRoutes />
       </HashRouter>
     </AppRoot>
   );
