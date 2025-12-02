@@ -61,9 +61,8 @@ export async function processQR(
 
     try {
       // Convert data URL to array buffer for EXIF
-      let arrayBuffer: ArrayBuffer;
       try {
-        arrayBuffer = dataURLToArrayBuffer(imageData);
+        dataURLToArrayBuffer(imageData);
       } catch (conversionError) {
         console.error("Data URL conversion failed:", conversionError);
         resolve({
