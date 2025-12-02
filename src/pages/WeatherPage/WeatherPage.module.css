@@ -21,7 +21,7 @@
 
 .weatherDescription {
   font-size: 16px;
-  color: #666;
+  color: var(--tg-theme-hint-color, #666);
 }
 
 .weatherCity {
@@ -42,8 +42,15 @@
 }
 
 .skeleton {
-  background-color: #e0e0e0;
-  animation: pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    var(--tgui--secondary_fill, rgba(255, 255, 255, 0.08)) 25%,
+    var(--tgui--bg_color, #1c1c1e) 50%,
+    var(--tgui--secondary_fill, rgba(255, 255, 255, 0.08)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
 }
 
 .weatherSkeletonIcon {
