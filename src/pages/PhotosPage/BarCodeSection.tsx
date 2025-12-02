@@ -6,14 +6,14 @@ export const BarCodeSection: FC = () => {
     <Section header="Bar Code Scanner">
       <Cell
         subtitle="Take photo or upload image"
-        //   onClick={() => fileInputRef.current?.click()}
+        //TODO logic for barcode scanning
       >
         Recognize information from bar code
       </Cell>
 
       <Cell
         subtitle="Bar code generator"
-        //   onClick={() => fileInputRef.current?.click()}
+        //TODO logic for barcode generation
       >
         Generate bar code from text
       </Cell>
