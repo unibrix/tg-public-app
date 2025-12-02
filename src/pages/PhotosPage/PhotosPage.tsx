@@ -1,24 +1,33 @@
 import { Section, Cell, List } from "@telegram-apps/telegram-ui";
 import { useState, useRef } from "react";
-import { createWorker } from "tesseract.js";
+import {
+  processOCR,
+  processQR,
+  generateQR,
+  type OCRResult,
+  type QRResult,
+} from "./imageProcessor";
+import styles from "./PhotosPage.module.css";
+import { useHaptics } from "@/hooks/useHaptics";
 
-interface OCRResult {
-  text: string;
-  confidence: number;
-}
+type Mode = "none" | "ocr" | "qr" | "barcode";
 
 export function PhotosPage() {
+  const [mode, setMode] = useState<Mode>("none");
   const [image, setImage] = useState<string | null>(null);
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
+  const [qrResult, setQrResult] = useState<QRResult | null>(null);
+  const [qrInputText, setQrInputText] = useState<string>("");
+  const [generatedQR, setGeneratedQR] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
+  const [qrProgress, setQrProgress] = useState<number>(0);
   const [showCopiedPopup, setShowCopiedPopup] = useState(false);
+  const [showQRTextInput, setShowQRTextInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const streamRef = useRef<MediaStream | null>(null);
+
+  const { impact } = useHaptics();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -27,50 +36,10 @@ export function PhotosPage() {
       reader.onload = (e) => {
         setImage(e.target?.result as string);
         setOcrResult(null);
+        setQrResult(null);
         setError(null);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraActive(true);
-      }
-    } catch (err) {
-      setError("Camera access denied or not available");
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    setCameraActive(false);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-        const imageData = canvas.toDataURL("image/png");
-        setImage(imageData);
-        setOcrResult(null);
-        setError(null);
-        stopCamera();
-      }
     }
   };
 
@@ -78,6 +47,7 @@ export function PhotosPage() {
     setLoading(true);
     setError(null);
     setProgress(0);
+    impact("medium");
 
     const timeout = setTimeout(() => {
       setError("OCR processing timed out. Please try again.");
@@ -86,21 +56,9 @@ export function PhotosPage() {
     }, 30000); // 30 second timeout
 
     try {
-      const worker = await createWorker("eng", 1, {
-        logger: (m: any) => {
-          if (m.status === "recognizing text") {
-            setProgress(Math.round(m.progress * 100));
-          }
-        },
-      });
-      const {
-        data: { text, confidence },
-      } = await worker.recognize(imageData);
-      await worker.terminate();
-
+      const result = await processOCR(imageData, (p) => setProgress(p));
       clearTimeout(timeout);
-      const cleanedText = cleanOCRText(text);
-      setOcrResult({ text: cleanedText, confidence });
+      setOcrResult(result);
     } catch (err) {
       clearTimeout(timeout);
       setError("OCR processing failed. Please try again.");
@@ -111,28 +69,38 @@ export function PhotosPage() {
     }
   };
 
-  const cleanOCRText = (text: string): string => {
-    return text
-      .replace(/\s+/g, " ")
-      .replace(/\n\s*\n/g, "\n")
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .join("\n")
-      .replace(/[^\w\s\n.,!?-]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+  const performQR = async (imageData: string) => {
+    setLoading(true);
+    setError(null);
+    setQrProgress(0);
+    impact("medium");
+    try {
+      setQrProgress(25);
+      const { result, error } = await processQR(imageData);
+      setQrProgress(100);
+      setQrResult(result);
+      if (error) {
+        setError(error);
+      }
+    } catch (err) {
+      setError("QR processing failed. Please try again.");
+      console.error("QR Error:", err);
+    } finally {
+      setLoading(false);
+      setQrProgress(0);
+    }
   };
 
-  const copyToClipboard = async () => {
-    if (ocrResult?.text) {
+  const copyToClipboard = async (text: string) => {
+    impact("light");
+    if (text) {
       try {
-        await navigator.clipboard.writeText(ocrResult.text);
+        await navigator.clipboard.writeText(text);
         setShowCopiedPopup(true);
         setTimeout(() => setShowCopiedPopup(false), 2000);
       } catch (err) {
         const textArea = document.createElement("textarea");
-        textArea.value = ocrResult.text;
+        textArea.value = text;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand("copy");
@@ -143,121 +111,147 @@ export function PhotosPage() {
     }
   };
 
+  const handleClearResults = () => {
+    impact("light");
+    setOcrResult(null);
+    setQrResult(null);
+    setGeneratedQR(null);
+    setImage(null);
+    setMode("none");
+    setError(null);
+    setQrInputText("");
+    setShowQRTextInput(false);
+  };
+
+  const handleGenerateQR = async (text: string) => {
+    impact("light");
+    try {
+      const qrDataURL = await generateQR(text);
+      setGeneratedQR(qrDataURL);
+    } catch (err) {
+      console.error("QR generation failed:", err);
+    }
+  };
+
+  const handleShareQR = async () => {
+    if (!generatedQR) return;
+    impact("light");
+
+    try {
+      // Convert data URL to blob
+      const response = await fetch(generatedQR);
+      const blob = await response.blob();
+      const file = new File([blob], "qr-code.png", { type: "image/png" });
+
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: "QR Code",
+          text: "Generated QR Code",
+          files: [file],
+        });
+      } else {
+        // Fallback: download or copy
+        const link = document.createElement("a");
+        link.href = generatedQR;
+        link.download = "qr-code.png";
+        link.click();
+      }
+    } catch (err) {
+      console.error("Share failed:", err);
+      // Fallback to download
+      const link = document.createElement("a");
+      link.href = generatedQR;
+      link.download = "qr-code.png";
+      link.click();
+    }
+  };
+
+  const handleShowQRTextInput = () => {
+    impact("light");
+    setShowQRTextInput(true);
+  };
+
   return (
-    <List style={{ paddingBottom: "100px" }}>
+    <List className={styles.listContainer}>
       <Section header="Document OCR">
         <Cell
           subtitle="Take photo or upload image"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            setMode("ocr");
+            fileInputRef.current?.click();
+          }}
         >
           Recognize text from image
         </Cell>
-
-        {/* {cameraActive && (
-          <Cell subtitle="Close camera" onClick={stopCamera}>
-            Stop Camera
-          </Cell>
-        )} */}
       </Section>
 
-      {cameraActive && (
-        <Section header="Camera">
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              maxWidth: "400px",
-              margin: "0 auto",
-            }}
-          >
-            {/* <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{ width: "100%", borderRadius: "8px" }}
-            />
-            <canvas ref={canvasRef} style={{ display: "none" }} /> */}
+      {mode === "ocr" && image && (
+        <>
+          <div className={styles.imageContainer}>
+            <img src={image} alt="Selected" className={styles.image} />
           </div>
-        </Section>
-      )}
 
-      {image && (
-        <Section header="Selected Image">
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "16px",
-              padding: "16px",
-            }}
-          >
-            <img
-              src={image}
-              alt="Selected"
-              style={{
-                maxWidth: "100%",
-                maxHeight: "300px",
-                borderRadius: "8px",
-              }}
-            />
-          </div>
           <Cell
             subtitle="Process image for text recognition"
             onClick={() => performOCR(image)}
             disabled={loading}
+            className=""
           >
             {loading ? `Processing... ${progress}%` : "Extract Text (OCR)"}
           </Cell>
-        </Section>
+        </>
       )}
 
-      {ocrResult && (
+      {mode === "ocr" && error && (
+        <div className={styles.errorContainer}>{error}</div>
+      )}
+
+      {mode === "ocr" && ocrResult && (
         <Section
           header={`Recognized Text (Quality: ${Math.round(
             ocrResult.confidence
           )}%)`}
         >
-          <div
-            style={{
-              padding: "16px",
-              backgroundColor: "#f5f5f5",
-              color: "#333",
-              borderRadius: "8px",
-              marginBottom: "16px",
-              whiteSpace: "pre-wrap",
-              fontFamily: "monospace",
-              fontSize: "14px",
-              maxHeight: "200px",
-              overflowY: "auto",
-              overflowX: "hidden",
-              textWrap: "wrap",
-            }}
-          >
-            {ocrResult.text || "No text detected"}
+          <div className={styles.ocrResultContainer}>
+            <div className={styles.ocrResult}>
+              {ocrResult.text || "No text detected"}
+            </div>
           </div>
-          <div style={{ paddingBottom: "20px" }}>
+
+          <div className={styles.buttonsContainer}>
             <Cell
               subtitle="Copy recognized text to clipboard"
-              onClick={copyToClipboard}
-              disabled={!ocrResult.text}
+              onClick={() => copyToClipboard(ocrResult!.text)}
+              disabled={!ocrResult?.text}
             >
-              Copy to Clipboard
+              Copy Text
             </Cell>
 
             <Cell
-              subtitle="Clear recognized text"
-              onClick={copyToClipboard}
-              disabled={!ocrResult.text}
+              subtitle="Generate QR code from text"
+              onClick={() => handleGenerateQR(ocrResult!.text)}
+              disabled={!ocrResult?.text}
             >
-              Clear text
+              Generate QR
             </Cell>
           </div>
-        </Section>
-      )}
 
-      {error && (
-        <Section header="Error">
-          <Cell subtitle="OCR processing error">{error}</Cell>
+          {generatedQR && (
+            <>
+              <div className={styles.imageContainer}>
+                <img
+                  src={generatedQR}
+                  alt="Generated QR"
+                  className={styles.image}
+                />
+              </div>
+              <div className={styles.buttonsContainer}>
+                <Cell subtitle="Share QR code" onClick={handleShareQR}>
+                  Share
+                </Cell>
+              </div>
+            </>
+          )}
         </Section>
       )}
 
@@ -266,28 +260,141 @@ export function PhotosPage() {
         type="file"
         accept="image/*"
         onChange={handleFileSelect}
-        style={{ display: "none" }}
+        className={styles.hiddenInput}
       />
 
+      {image && mode === "ocr" && (
+        <Cell subtitle="Clear data" onClick={handleClearResults}>
+          Reset
+        </Cell>
+      )}
+
       {showCopiedPopup && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: "25%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            color: "white",
-            padding: "12px 24px",
-            borderRadius: "8px",
-            fontSize: "14px",
-            zIndex: 1000,
-            animation: "fadeIn 0.3s ease-out",
+        <div className={styles.copiedPopup}>Text copied to clipboard</div>
+      )}
+
+      <Section header="QR Code Scanner">
+        <Cell
+          subtitle="Take photo or upload image"
+          onClick={() => {
+            setMode("qr");
+            fileInputRef.current?.click();
           }}
         >
-          Text copied to clipboard
-        </div>
-      )}
+          Scan QR code
+        </Cell>
+
+        {mode === "qr" && image && (
+          <>
+            <div className={styles.imageContainer}>
+              <img src={image} alt="Selected" className={styles.image} />
+            </div>
+            <Cell
+              subtitle="Process image for QR code recognition"
+              onClick={() => performQR(image)}
+              disabled={loading}
+            >
+              {loading ? `Processing... ${qrProgress}%` : "Extract QR Code"}
+            </Cell>
+          </>
+        )}
+
+        {mode === "qr" && error && (
+          <div className={styles.errorContainer}>{error}</div>
+        )}
+
+        {mode === "qr" && qrResult && (
+          <Section header="Recognized QR Code">
+            <div className={styles.resultContainer}>
+              <div className={styles.ocrResult}>
+                {qrResult.text || "No QR code data"}
+              </div>
+            </div>
+            <div className={styles.buttonsContainer}>
+              <Cell
+                subtitle="Copy QR code data to clipboard"
+                onClick={() => copyToClipboard(qrResult!.text)}
+                disabled={!qrResult.text}
+              >
+                Copy
+              </Cell>
+            </div>
+          </Section>
+        )}
+
+        {image && mode === "qr" && (
+          <Cell subtitle="Reset data" onClick={handleClearResults}>
+            Reset
+          </Cell>
+        )}
+
+        {!image && (
+          <>
+            <Cell subtitle="QR Code Generator" onClick={handleShowQRTextInput}>
+              Generate QR code from text
+            </Cell>
+            {showQRTextInput && (
+              <textarea
+                placeholder="Type or paste your text here"
+                value={qrInputText}
+                onChange={(e) => setQrInputText(e.target.value)}
+                className={showQRTextInput ? styles.textInput : styles.hidden}
+              />
+            )}
+            <Cell
+              subtitle="Generate QR code"
+              onClick={() => handleGenerateQR(qrInputText)}
+              disabled={!qrInputText.trim()}
+              className={!qrInputText.trim() ? styles.hiddenInput : ""}
+            >
+              Generate QR
+            </Cell>
+
+            {showQRTextInput && (
+              <Cell
+                subtitle="Reset"
+                onClick={handleClearResults}
+                className={showQRTextInput ? "" : styles.hidden}
+              >
+                Clear data
+              </Cell>
+            )}
+
+            {generatedQR && qrInputText && (
+              <>
+                <div className={styles.imageContainer}>
+                  <img
+                    src={generatedQR}
+                    alt="Generated QR"
+                    className={styles.image}
+                  />
+                </div>
+                <div className={styles.buttonsContainer}>
+                  <Cell subtitle="Share QR code" onClick={handleShareQR}>
+                    Share
+                  </Cell>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </Section>
+
+      <Section header="Bar Code Scanner">
+        <Cell
+          subtitle="Take photo or upload image"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Recognize information from bar code
+        </Cell>
+
+        <Cell
+          subtitle="Bar code generator"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Generate bar code from text
+        </Cell>
+      </Section>
     </List>
   );
 }
