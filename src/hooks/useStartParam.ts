@@ -25,9 +25,7 @@ export interface StartParamResult {
  */
 export function useStartParam(delimiter = '__'): StartParamResult {
   const launchParams = useLaunchParams();
-  // startParam can be string, undefined, or {} (empty object) depending on SDK version
-  const rawParam = launchParams.startParam;
-  const raw = typeof rawParam === 'string' ? rawParam : undefined;
+  const raw = launchParams.tgWebAppStartParam;
 
   const params = useMemo(() => {
     if (!raw) return {};
