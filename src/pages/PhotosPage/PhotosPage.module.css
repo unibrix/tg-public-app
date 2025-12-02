@@ -20,51 +20,25 @@
   max-width: 100%;
   max-height: 300px;
   border-radius: 8px;
-}
-
-.ocrResult {
-  padding: 16px;
-  background-color: #f5f5f5;
-  color: #333;
-  border-radius: 8px;
-  white-space: pre-wrap;
-  font-family: monospace;
-  font-size: 14px;
-  max-height: 200px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  text-wrap: wrap;
+  border: 1px solid var(--tg-theme-hint-color, #ccc);
 }
 
 .resultContainer {
-  overflow: hidden;
-  border-radius: 8px;
-}
-
-.progressContainer {
-  padding: 16px;
-  text-align: center;
-}
-
-.progressBar {
-  height: 4px;
   width: 100%;
-  background-color: #e0e0e0;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 8px;
 }
 
-.progressFill {
-  height: 100%;
-  background-color: #007aff;
-  transition: width 0.3s ease;
-}
-
-.progressText {
+.ocrResult {
+  background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  color: var(--tg-theme-text-color, #333);
+  border-radius: 8px;
+  border: 1px solid var(--tg-theme-hint-color, #ccc);
+  padding: 12px;
+  font-family: monospace;
   font-size: 14px;
-  color: #666;
-  margin-top: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .buttonsContainer {
@@ -76,8 +50,8 @@
   bottom: 25%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
+  background-color: var(--tg-theme-bg-color, rgba(0, 0, 0, 0.8));
+  color: var(--tg-theme-text-color, white);
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 14px;
@@ -94,10 +68,10 @@
   display: block;
   width: 100%;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--tg-theme-hint-color, #ccc);
   padding: 16px;
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  color: var(--tg-theme-text-color, #333);
   white-space: pre-wrap;
   font-family: monospace;
   font-size: 14px;
@@ -110,7 +84,7 @@
 
 .errorContainer {
   padding: 16px;
-  color: red;
+  color: var(--tg-theme-destructive-text-color, red);
   text-align: center;
 }
 

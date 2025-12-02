@@ -73,19 +73,7 @@ export async function processQR(
         return;
       }
 
-      // Read EXIF
       let orientation = 1;
-      // Temporarily disabled EXIF reading to test
-      /*
-      try {
-        const tags = ExifReader.load(arrayBuffer);
-        if (tags.Orientation) {
-          orientation = tags.Orientation.value as number;
-        }
-      } catch (exifError) {
-        // Ignore EXIF errors, use default orientation
-      }
-      */
 
       const img = new Image();
       img.src = imageData;
@@ -217,6 +205,7 @@ export async function processQR(
 // Placeholder for future barcode processing
 export async function processBarcode(imageData: string): Promise<any> {
   // TODO: Implement barcode recognition
+  console.log(imageData);
   throw new Error("Barcode processing not implemented yet");
 }
 
