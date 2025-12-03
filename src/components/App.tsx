@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Navigate, Route, Routes, HashRouter, useNavigate } from 'react-router-dom';
 import { useLaunchParams, useSignal, miniApp } from '@tma.js/sdk-react';
 import { AppRoot } from '@telegram-apps/telegram-ui';
@@ -12,12 +12,14 @@ function AppRoutes() {
   const navigate = useNavigate();
   const { raw: startParam } = useStartParam();
   const setStartParam = useAppStore((s) => s.setStartParam);
+  const hasProcessedDeepLink = useRef(false);
 
   useEffect(() => {
-    if (startParam) {
-      setStartParam(startParam);
-      navigate('/settings');
-    }
+    if (hasProcessedDeepLink.current || !startParam) return;
+    hasProcessedDeepLink.current = true;
+
+    setStartParam(startParam);
+    navigate('/settings', { replace: true });
   }, [startParam, setStartParam, navigate]);
 
   return (
