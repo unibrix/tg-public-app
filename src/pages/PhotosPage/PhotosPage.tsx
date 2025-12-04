@@ -1,34 +1,43 @@
 import { List } from "@telegram-apps/telegram-ui";
-import { useState } from "react";
-import { generateQR } from "./imageProcessor";
-import { useHaptics } from "@/hooks/useHaptics";
+import { useState, createContext, useContext } from "react";
+import { useQR } from "@/hooks/useQR";
 import { OCRSection } from "./OCRSection";
 import { QRSection } from "./QRSection";
-import { BarCodeSection } from "./BarCodeSection";
 
 import styles from "./PhotosPage.module.css";
 
 export type Mode = "none" | "ocr" | "qr" | "barcode";
 
+interface QRContextType {
+  generatedQR: string | null;
+  error: string | null;
+  generateQRCode: (text: string) => Promise<void>;
+  clearQR: () => void;
+}
+
+const QRContext = createContext<QRContextType | null>(null);
+
+export const useQRContext = () => {
+  const context = useContext(QRContext);
+  if (!context) {
+    throw new Error("useQRContext must be used within QRProvider");
+  }
+  return context;
+};
+
 export function PhotosPage() {
   const [mode, setMode] = useState<Mode>("none");
-  const [generatedQR, setGeneratedQR] = useState<string | null>(null);
+  const { generatedQR, error, generateQRCode, clearQR } = useQR();
 
-  const { impact } = useHaptics();
-
-  const handleGenerateQR = async (text: string) => {
-    impact("light");
-    try {
-      const qrDataURL = await generateQR(text);
-      setGeneratedQR(qrDataURL);
-    } catch (err) {
-      console.error("QR generation failed:", err);
-    }
+  const qrContextValue = {
+    generatedQR,
+    error,
+    generateQRCode,
+    clearQR,
   };
 
   const handleShareQR = async () => {
     if (!generatedQR) return;
-    impact("light");
 
     try {
       // Convert data URL to blob
@@ -60,24 +69,20 @@ export function PhotosPage() {
   };
 
   return (
-    <List className={styles.listContainer}>
-      <OCRSection
-        mode={mode}
-        setMode={setMode}
-        generatedQR={generatedQR}
-        handleGenerateQR={handleGenerateQR}
-        handleShareQR={handleShareQR}
-      />
+    <QRContext.Provider value={qrContextValue}>
+      <List className={styles.listContainer}>
+        <OCRSection
+          mode={mode}
+          setMode={setMode}
+          handleShareQR={handleShareQR}
+        />
 
-      <QRSection
-        mode={mode}
-        setMode={setMode}
-        generatedQR={generatedQR}
-        handleGenerateQR={handleGenerateQR}
-        handleShareQR={handleShareQR}
-      />
-
-      <BarCodeSection />
-    </List>
+        <QRSection
+          mode={mode}
+          setMode={setMode}
+          handleShareQR={handleShareQR}
+        />
+      </List>
+    </QRContext.Provider>
   );
 }

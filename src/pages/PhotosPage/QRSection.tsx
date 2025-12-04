@@ -6,22 +6,21 @@ import { useQR } from "@/hooks/useQR";
 import { useClipboard } from "@/hooks/useClipboard";
 
 import type { Mode } from "./PhotosPage";
+import { useQRContext } from "./PhotosPage";
 
 interface QRSectionProps {
   mode: Mode;
   setMode: (mode: Mode) => void;
-  generatedQR: string | null;
-  handleGenerateQR: (text: string) => void;
   handleShareQR: () => void;
 }
 
-export function QRSection({
-  mode,
-  setMode,
-  generatedQR,
-  handleGenerateQR,
-  handleShareQR,
-}: QRSectionProps) {
+export function QRSection({ mode, setMode, handleShareQR }: QRSectionProps) {
+  const {
+    generatedQR,
+    error: generatedError,
+    generateQRCode,
+    clearQR: clearGeneratedQR,
+  } = useQRContext();
   const { image, fileInputRef, pickImage, handleFileSelect, clearImage } =
     useImagePicker();
 
@@ -38,12 +37,19 @@ export function QRSection({
   const [qrInputText, setQrInputText] = useState<string>("");
   const [showQRTextInput, setShowQRTextInput] = useState(false);
 
-  const handleShowQRTextInput = () => setShowQRTextInput(true);
+  const handleShowQRTextInput = () => {
+    handleClearResults();
+    setShowQRTextInput(true);
+    setMode("qr");
+  };
+
   const handleClearResults = () => {
     clearImage();
     setQrInputText("");
     setShowQRTextInput(false);
     clearQR();
+    clearGeneratedQR();
+    setMode("none");
   };
 
   return (
@@ -51,6 +57,7 @@ export function QRSection({
       <Cell
         subtitle="Take photo or upload image"
         onClick={() => {
+          handleClearResults();
           setMode("qr");
           pickImage();
         }}
@@ -72,9 +79,11 @@ export function QRSection({
             </Cell>
           </>
         )}
+
         {mode === "qr" && error && (
           <div className={styles.errorContainer}>{error}</div>
         )}
+
         {mode === "qr" && qrResult && (
           <Section header="Recognized QR Code">
             <div className={styles.resultContainer}>
@@ -93,18 +102,20 @@ export function QRSection({
             </div>
           </Section>
         )}
+
         {image && mode === "qr" && (
           <Cell subtitle="Reset data" onClick={handleClearResults}>
             Reset
           </Cell>
         )}
+
         {!image && (
           <>
             <Cell subtitle="QR Code Generator" onClick={handleShowQRTextInput}>
               Generate QR code from text
             </Cell>
 
-            {showQRTextInput && (
+            {mode === "qr" && showQRTextInput && (
               <textarea
                 placeholder="Type or paste your text here"
                 value={qrInputText}
@@ -115,14 +126,21 @@ export function QRSection({
 
             <Cell
               subtitle="Generate QR code"
-              onClick={() => handleGenerateQR(qrInputText)}
+              onClick={() => {
+                generateQRCode(qrInputText);
+                setMode("qr");
+              }}
               disabled={!qrInputText.trim()}
               className={!qrInputText.trim() ? styles.hiddenInput : ""}
             >
               Generate QR
             </Cell>
 
-            {showQRTextInput && (
+            {generatedError && mode === "qr" && (
+              <div className={styles.errorContainer}>{generatedError}</div>
+            )}
+
+            {mode === "qr" && showQRTextInput && (
               <Cell
                 subtitle="Clear data"
                 onClick={handleClearResults}
@@ -132,7 +150,7 @@ export function QRSection({
               </Cell>
             )}
 
-            {generatedQR && qrInputText && (
+            {mode === "qr" && generatedQR && qrInputText && (
               <>
                 <div className={styles.imageContainer}>
                   <img
@@ -150,6 +168,7 @@ export function QRSection({
             )}
           </>
         )}
+
         <input
           ref={fileInputRef}
           type="file"
@@ -157,7 +176,8 @@ export function QRSection({
           onChange={handleFileSelect}
           className={styles.hiddenInput}
         />
-        {showCopied && (
+
+        {mode === "qr" && showCopied && (
           <div className={styles.copiedPopup}>Text copied to clipboard</div>
         )}
       </div>
