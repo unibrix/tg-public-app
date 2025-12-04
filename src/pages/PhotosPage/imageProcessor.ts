@@ -3,6 +3,53 @@ import { createWorker } from "tesseract.js";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import QRCode from "qrcode";
 
+export async function preprocessImage(imageData: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = imageData;
+
+    img.onload = () => {
+      const maxSize = 1500;
+      let { width, height } = img;
+
+      // scale down to avoid Tesseract memory crash
+      if (width > maxSize || height > maxSize) {
+        const scale = maxSize / Math.max(width, height);
+        width = Math.floor(width * scale);
+        height = Math.floor(height * scale);
+      }
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject("Canvas not supported");
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const imageDataObj = ctx.getImageData(0, 0, width, height);
+      const data = imageDataObj.data;
+
+      // grayscale + soft threshold
+      for (let i = 0; i < data.length; i += 4) {
+        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+
+        const value = avg > 140 ? 255 : 0;
+
+        data[i] = value;
+        data[i + 1] = value;
+        data[i + 2] = value;
+      }
+
+      ctx.putImageData(imageDataObj, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+
+    img.onerror = () => reject("Invalid image");
+  });
+}
+
 function dataURLToArrayBuffer(dataURL: string): ArrayBuffer {
   const arr = dataURL.split(",");
   const bstr = atob(arr[1]);
@@ -35,10 +82,17 @@ export async function processOCR(
     },
   });
 
+  const preprocessed = await preprocessImage(imageData);
+
+  await worker.setParameters({
+    tessedit_ocr_engine_mode: "1",
+    user_defined_dpi: "300",
+  });
+
   try {
     const {
       data: { text, confidence },
-    } = await worker.recognize(imageData);
+    } = await worker.recognize(preprocessed);
     const cleanedText = cleanOCRText(text);
     return { text: cleanedText, confidence };
   } finally {
@@ -160,6 +214,14 @@ export async function processQR(
 
           const codeReader = new BrowserQRCodeReader();
           const result = codeReader.decodeFromCanvas(canvas);
+
+          if (result == null || !result.getText()) {
+            return resolve({
+              result: null,
+              error: "No QR code found in the image.",
+            });
+          }
+
           resolve({ result: { text: result.getText() } });
           console.log("QR detected successfully");
         } catch (error) {
@@ -201,7 +263,6 @@ export async function processQR(
   });
 }
 
-// Placeholder for future barcode processing
 export async function processBarcode(imageData: string): Promise<any> {
   // TODO: Implement barcode recognition
   console.log(imageData);

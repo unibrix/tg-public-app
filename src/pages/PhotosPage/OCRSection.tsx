@@ -3,23 +3,16 @@ import styles from "./PhotosPage.module.css";
 import { useOCR } from "@/hooks/useOCR";
 import { useImagePicker } from "@/hooks/useImagePicker";
 import { useClipboard } from "@/hooks/useClipboard";
-import { Mode } from "./PhotosPage";
+import { Mode, useQRContext } from "./PhotosPage";
 
 interface OCRSectionProps {
   mode: Mode;
   setMode: (mode: Mode) => void;
-  generatedQR: string | null;
-  handleGenerateQR: (text: string) => void;
   handleShareQR: () => void;
 }
 
-export function OCRSection({
-  mode,
-  setMode,
-  generatedQR,
-  handleGenerateQR,
-  handleShareQR,
-}: OCRSectionProps) {
+export function OCRSection({ mode, setMode, handleShareQR }: OCRSectionProps) {
+  const { generatedQR, error, generateQRCode, clearQR } = useQRContext();
   const { image, fileInputRef, pickImage, handleFileSelect, clearImage } =
     useImagePicker();
   const {
@@ -35,6 +28,8 @@ export function OCRSection({
   const handleClear = () => {
     clearImage();
     clearOCR();
+    clearQR();
+    setMode("none");
   };
 
   return (
@@ -43,6 +38,7 @@ export function OCRSection({
         <Cell
           subtitle="Take photo or upload image"
           onClick={() => {
+            handleClear();
             setMode("ocr");
             pickImage();
           }}
@@ -67,7 +63,7 @@ export function OCRSection({
         {mode === "ocr" && ocrError && (
           <div className={styles.errorContainer}>{ocrError}</div>
         )}
-        {ocrResult && (
+        {mode === "ocr" && ocrResult && (
           <div className={styles.resultContainer}>
             <div className={styles.ocrResult}>
               {ocrResult.text || "No text detected"}
@@ -84,14 +80,14 @@ export function OCRSection({
 
               <Cell
                 subtitle="Generate QR code from text"
-                onClick={() => handleGenerateQR(ocrResult.text)}
+                onClick={() => generateQRCode(ocrResult.text)}
                 disabled={!ocrResult?.text}
               >
                 Generate QR
               </Cell>
             </div>
 
-            {generatedQR && (
+            {mode === "ocr" && generatedQR && (
               <>
                 <div className={styles.imageContainer}>
                   <img
@@ -116,13 +112,17 @@ export function OCRSection({
           className={styles.hiddenInput}
         />
 
+        {mode === "ocr" && error && (
+          <div className={styles.errorContainer}>{error}</div>
+        )}
+
         {mode === "ocr" && image && (
           <Cell subtitle="Clear data" onClick={handleClear}>
             Reset
           </Cell>
         )}
 
-        {showCopied && (
+        {mode === "ocr" && showCopied && (
           <div className={styles.copiedPopup}>Text copied to clipboard</div>
         )}
       </div>
